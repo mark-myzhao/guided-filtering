@@ -6,7 +6,9 @@ def calculate_box(matrix):
     """
     height, width = len(matrix), len(matrix[0])
     buff = matrix[0][:]
-    res = [buff[:]]
+    res = [[buff[0]]]
+    for i in range(1, len(buff)):
+        res[0].append(res[0][i-1] + buff[i])
     for i in range(1, height):
         row_res = []
         for j in range(width):
@@ -25,9 +27,18 @@ def calculate_box(matrix):
 # --------------------------------
 # params are tuples (x, y)
 def calculate_sum(matrix, pos_lu, pos_ru, pos_lb, pos_rb):
-    total = matrix[pos_rb[0]][pos_rb[1]]
-
-    pass
+    total_sum = matrix[pos_rb[0]][pos_rb[1]]
+    up_sum = 0  # pos_ru
+    left_sum = 0  # pos_lb
+    up_left = 0  # pos_lu
+    # bound test
+    if pos_ru[0] > 0:
+        up_sum = matrix[pos_ru[0]-1][pos_ru[1]]
+    if pos_lb[1] > 0:
+        left_sum = matrix[pos_lb[0]][pos_lb[1]-1]
+    if pos_lb[1] > 0 and pos_ru[0] > 0:
+        up_left = matrix[pos_lu[0]-1][pos_lu[1]-1]
+    return total_sum - up_sum - left_sum + up_left
 
 
 def array_multiply(m1, m2):
