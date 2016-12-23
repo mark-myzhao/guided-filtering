@@ -24,7 +24,11 @@ class GuideFilter(object):
     # --- init methods, parameters should be set by user ---
     def read_img(self, img_path):
         img = Image.open(img_path)
-        self.p = util.list_to_matrix(list(img.getdata()), img.width, img.height)
+        pixels = list(img.getdata())
+        # normalize operation [0-255] -> [0-1]
+        for i in range(len(pixels)):
+            pixels[i] /= 255.0
+        self.p = util.list_to_matrix(pixels, img.width, img.height)
         self.origin_p = img
         self.__img_size = img.size
 
@@ -32,7 +36,11 @@ class GuideFilter(object):
         img = Image.open(guide_path)
         # guide size should be equal to source size
         if img.size == self.__img_size:
-            self.guide = util.list_to_matrix(list(img.getdata()), img.width, img.height)
+            pixels = list(img.getdata())
+            # normalize operation [0-255] -> [0-1]
+            for i in range(len(pixels)):
+                pixels[i] /= 255.0
+            self.guide = util.list_to_matrix(pixels, img.width, img.height)
         else:
             # error happens
             print('> Error: guide\'s size should be equal to source\'s size')
@@ -45,8 +53,8 @@ class GuideFilter(object):
         self.p = util.padding(self.p, r)
         self.guide = util.padding(self.guide, r)
 
-    def set_epsilon(self, s):
-        self.__epsilon = s
+    def set_epsilon(self, e):
+        self.__epsilon = e
 
     # --- kernel algorithm ---
     def run(self):
@@ -59,7 +67,7 @@ class GuideFilter(object):
             q_row = []
             for j in range(r, r + self.__img_size[0]):
                 aver_a, aver_b = self.__calculate_aver_ab_at(i, j)
-                result = floor(aver_a * self.guide[i][j] + aver_b)
+                result = aver_a * self.guide[i][j] + aver_b
                 # print(str(aver_a) + " " + str(aver_b) + " " + str(result))
                 q_row.append(result)
             self.q.append(q_row)
@@ -74,10 +82,14 @@ class GuideFilter(object):
 
     def get_res_img(self):
         img = self.origin_p.copy()
+        res_pixels = util.matrix_to_list(self.q)
+        # normalize [0-1] -> [0-255]
+        for i in range(len(res_pixels)):
+            res_pixels[i] = floor(res_pixels[i] * 255.0)
         if self.q is None:
             print('> Error: Algorithm has not finished')
         else:
-            img.putdata(util.matrix_to_list(self.q))
+            img.putdata(res_pixels)
         return img
 
     # --- internal methods, used to implement the kernel algorithm ---
@@ -129,6 +141,7 @@ class GuideFilter(object):
         aver_i = sum_i / float(w)
         aver_p = sum_p / float(w)
         sigma2 = sum_p2 / float(w) - (sum_p / float(w)) ** 2
+        # print(sigma2)
         a_res = (sum_ip / float(w) - aver_i * aver_p) / float(sigma2 + self.__epsilon)
         b_res = aver_p - a_res * aver_i
         return a_res, b_res
