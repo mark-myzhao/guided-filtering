@@ -1,3 +1,8 @@
+import math
+
+from PIL import Image
+
+
 def calculate_box(matrix):
     """return the buffer of integral image technique
 
@@ -70,17 +75,18 @@ def matrix_to_list(mat):
     return res
 
 
-def padding(mat, padding_num):
+def padding(mat, padding_num, padding_ele=0):
     """
 
     :param mat: source matrix to be padded
-    :param padding_num:  padding number
+    :param padding_num: padding number
+    :param padding_ele: padding element
     :return: matrix after 0-padding
     """
     new_mat = []
     m, n = len(mat), len(mat[0])
     for i in range(padding_num * 2 + m):
-        new_mat.append([0 for j in range(padding_num * 2 + n)])
+        new_mat.append([padding_ele for j in range(padding_num * 2 + n)])
     cur_x, cur_y = padding_num, padding_num
     for row in mat:
         for ele in row:
@@ -89,3 +95,42 @@ def padding(mat, padding_num):
         cur_y = padding_num
         cur_x += 1
     return new_mat
+
+
+# --- method used to preform color image processing
+# return (h, s, i)
+def rgb_to_hsi(r, g, b):
+    tmp = 0.5 * ((r - g) + (r - b))
+    flag = (r == b) and (b == g)
+    tmp = 1 if flag else tmp / math.sqrt(((r - g)**2 + (r - b) * (g - b)))
+    angle = (math.acos(tmp) * 180.0) / math.pi
+    h = angle if b <= g else 360 - angle
+    tmp = r + g + b
+    s = 0 if tmp == 0 else 1 - (3 / tmp) * min((r, g, b))
+    i = tmp / 3
+    return h, s, int(i)
+
+
+def get_one_channel(rgb_pixels, channel):
+    d = {'R': 0, 'G': 1, 'B': 2}
+    if channel in d:
+        select = d[channel]
+    else:  # invalid args
+        return rgb_pixels
+    oc_pixels = []
+    for ele in rgb_pixels:
+        oc_pixels.append(ele[select])
+    return oc_pixels
+
+
+# merge r, g, b channel to form a image
+def merge_image(img_r, img_g, img_b):
+    r_array = list(img_r.getdata())
+    g_array = list(img_g.getdata())
+    b_array = list(img_b.getdata())
+    pixels = []
+    for i in range(len(r_array)):
+        pixels.append((r_array[i], g_array[i], b_array[i]))
+    res_img = Image.new('RGB', img_b.size)
+    res_img.putdata(pixels)
+    return res_img

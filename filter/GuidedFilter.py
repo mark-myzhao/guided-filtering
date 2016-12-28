@@ -4,12 +4,13 @@ from math import floor
 import filter.util as util
 
 
+# 仅用灰度图像作为Guide进行引导滤波
 class GuideFilter(object):
     def __init__(self):
         self.origin_p = None  # origin img
         self.p = None  # source image matrix, padded after set_filter_radius()
         self.guide = None  # guide image matrix, padded after set_filter_radius()
-        self.q = None  # target image matrix, padded after set_filter_radius()
+        self.q = None  # target image matrix
         self.__epsilon = None  # a small number epsilon, set by user
         self.__p_buff = None  # box filter method buffer
         self.__guide_buff = None  # box filter method buffer
