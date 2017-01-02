@@ -1,6 +1,7 @@
 import math
 
 from PIL import Image
+from math import floor
 
 
 def calculate_box(matrix):
@@ -125,6 +126,13 @@ def get_one_channel(rgb_pixels, channel):
 
 # merge r, g, b channel to form a image
 def merge_image(img_r, img_g, img_b):
+    """
+
+    :param img_r: 红色通道
+    :param img_g: 绿色通道
+    :param img_b: 蓝色通道
+    :return: 合并图片得到的彩色图像
+    """
     r_array = list(img_r.getdata())
     g_array = list(img_g.getdata())
     b_array = list(img_b.getdata())
@@ -134,3 +142,31 @@ def merge_image(img_r, img_g, img_b):
     res_img = Image.new('RGB', img_b.size)
     res_img.putdata(pixels)
     return res_img
+
+
+# 通过双线形插值的方法进行采样操作
+def sample(matrix, width, height):
+    """
+
+    :param matrix: 输入的标量阵列
+    :param height: 目标图像高度
+    :param width: 目标图像宽度
+    :return: 输出的采样结果阵列
+    """
+    ori_height, ori_width = len(matrix), len(matrix[0])
+    h_rate = float(ori_height) / float(height)
+    w_rate = float(ori_width) / float(width)
+    res = []
+    for x in range(height):
+        new_row = []
+        for y in range(width):
+            tmp = h_rate * x, w_rate * y
+            i, j = floor(tmp[0]), floor(tmp[1])
+            u, v = tmp[0] - i, tmp[1] - j
+            pixel_value = (1-u) * (1-v) * matrix[i][j]
+            pixel_value += (1-u) * v * matrix[i][j+1] if j+1 < ori_width else 0
+            pixel_value += u * (1-v) * matrix[i+1][j] if i+1 < ori_height else 0
+            pixel_value += u * v * matrix[i+1][j+1] if j+1 < ori_width and i+1 < ori_height else 0
+            new_row.append(pixel_value)
+        res.append(new_row)
+    return res

@@ -6,9 +6,10 @@ import numpy as np
 import filter.util as util
 
 
+# 快速引导滤波算法，通过上下采样将复杂度降为O(N/s^2)
 # 使用彩色图像作为Guide进行引导滤波
 # 适用于RGB任何通道都无显著边界的情况
-class CIPGuideFilter(object):
+class FastCIPGuidedFilter(object):
     def __init__(self):
         # -- constant value --
         self.__GREY_LEVEL = 256.0
