@@ -1,4 +1,5 @@
 import filter.GuidedFilter as filter
+import filter.FastGuidedFilter as fastFilter
 import filter.CIPGuidedFilter as cipFilter
 import filter.util as util
 
@@ -12,7 +13,7 @@ def image_smoothing():
     test = filter.GuideFilter()
     test.read_img('../input/img_smoothing/lena.bmp')
     test.set_guide('../input/img_smoothing/lena.bmp')
-    test.set_filter_radius(8)  # means a 5 * 5 filter
+    test.set_filter_radius(4)  # means a 5 * 5 filter
     test.set_epsilon(0.2 * 0.2)
     test.run()
     res = test.get_res_img()
@@ -52,26 +53,26 @@ def image_enhancement(img_path, output_path, filter_radius=3, epsilon=0.2, k=1):
 
 
 def fast_image_smoothing():
-    img = Image.open('../input/img_enhancement/bird.bmp')
-    pixels_rgb = list(img.getdata())
-    nw = floor(img.width / 1.5)
-    nh = floor(img.height / 1.5)
-    new_pixel_r = util.sample(util.list_to_matrix(util.get_one_channel(pixels_rgb, 'R'), img.width, img.height), nw, nh)
-    new_pixel_g = util.sample(util.list_to_matrix(util.get_one_channel(pixels_rgb, 'G'), img.width, img.height), nw, nh)
-    new_pixel_b = util.sample(util.list_to_matrix(util.get_one_channel(pixels_rgb, 'B'), img.width, img.height), nw, nh)
-    new_img_r = Image.new('L', (nw, nh))
-    new_img_g = Image.new('L', (nw, nh))
-    new_img_b = Image.new('L', (nw, nh))
-    new_img_r.putdata(util.matrix_to_list(new_pixel_r))
-    new_img_g.putdata(util.matrix_to_list(new_pixel_g))
-    new_img_b.putdata(util.matrix_to_list(new_pixel_b))
-    new_img_r.save('../output/test_r.bmp')
-    new_img_g.save('../output/test_g.bmp')
-    new_img_b.save('../output/test_b.bmp')
-    new_img = util.merge_image(new_img_r, new_img_g, new_img_b)
-    new_img.save('../output/test_rgb.bmp')
+    test = fastFilter.FastGuideFilter()
+    test.read_img('../input/img_smoothing/lena.bmp')
+    test.set_sample_ratio(4)
+    test.set_guide('../input/img_smoothing/lena.bmp')
+    test.set_filter_radius(4)  # means a 5 * 5 filter
+    test.set_epsilon(0.2 * 0.2)
+    test.run()
+    res = test.get_res_img()
+    if not (res is None):
+        # res.show()
+        res.save('../output/img_smoothing/fast_lena_8.bmp')
 
+s = clock()
+image_smoothing()
+s1 = clock()
 fast_image_smoothing()
+s2 = clock()
+
+print(s1 - s)
+print(s2 - s1)
 
 # # 测试步骤
 # start_total = clock()

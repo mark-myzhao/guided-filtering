@@ -15,8 +15,9 @@ class FastCIPGuidedFilter(object):
         self.__GREY_LEVEL = 256.0
         # -- init value
         self.origin_p = None  # origin img
-        self.p = None  # the matrix of **one channel** of source image, padded after set_filter_radius()
-        self.guide_v = [None, None, None]  # guide image matrix (3-D vector), padded after set_filter_radius()
+        self.origin_guide_v = [None, None, None]
+        self.p = None  # sampled the matrix of **one channel** of source image, padded after set_filter_radius()
+        self.guide_v = [None, None, None]  # sampled guide image matrix (3-D vector), padded after set_filter_radius()
         self.q = None  # target matrix
         self.__epsilon = None  # a small number epsilon, set by user
         self.__p_buff = None  # box filter method buffer

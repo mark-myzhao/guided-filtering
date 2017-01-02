@@ -5,11 +5,12 @@ import filter.util as util
 
 
 # 仅用灰度图像作为Guide进行引导滤波
-class GuideFilter(object):
+class FastGuideFilter(object):
     def __init__(self):
         self.origin_p = None  # origin img
-        self.p = None  # source image matrix, padded after set_filter_radius()
-        self.guide = None  # guide image matrix, padded after set_filter_radius()
+        self.origin_guide = None  # origin guide matrix
+        self.p = None  # sampled source image matrix, padded after set_filter_radius()
+        self.guide = None  # sampled guide image matrix, padded after set_filter_radius()
         self.q = None  # target image matrix
         self.__epsilon = None  # a small number epsilon, set by user
         self.__p_buff = None  # box filter method buffer
@@ -18,9 +19,11 @@ class GuideFilter(object):
         self.__p2_buff = None  # box filter method buffer
         self.__a_buff = None  # box filter buffer of parameter a
         self.__b_buff = None  # box filter buffer of parameter b
-        self.__img_size = None  # source size, (width, height)
+        self.__origin_img_size = None  # source size, (width, height)
+        self.__img_size = None  # sampled image size
         self.__padding_img_size = None  # size of padding image, (width, height)
         self.__filter_radius = None  # filter radius
+        self.__s = None  # sample ratio
 
     # --- init methods, parameters should be set by user ---
     def read_img(self, img_path):
@@ -32,16 +35,25 @@ class GuideFilter(object):
         self.p = util.list_to_matrix(pixels, img.width, img.height)
         self.origin_p = img
         self.__img_size = img.size
+        self.__origin_img_size = img.size
+
+    # 设置采样率，需要在set_guide和set_filter_radius之前调用
+    def set_sample_ratio(self, rs):
+        self.__s = rs
+        nw, nh = floor(self.__img_size[0] / rs), floor(self.__img_size[1] / rs)
+        self.__img_size = nw, nh
+        self.p = util.sample(self.p, nw, nh)
 
     def set_guide(self, guide_path):
         img = Image.open(guide_path)
         # guide size should be equal to source size
-        if img.size == self.__img_size:
+        if img.size == self.__origin_img_size:
             pixels = list(img.getdata())
             # normalize operation [0-255] -> [0-1]
             for i in range(len(pixels)):
                 pixels[i] /= 255.0
-            self.guide = util.list_to_matrix(pixels, img.width, img.height)
+            self.origin_guide = util.list_to_matrix(pixels, img.width, img.height)
+            self.guide = util.sample(self.origin_guide, self.__img_size[0], self.__img_size[1])
         else:
             # error happens
             print('> Error: guide\'s size should be equal to source\'s size')
@@ -49,27 +61,37 @@ class GuideFilter(object):
 
     # set the radius of guided filter while padding source and guided images
     def set_filter_radius(self, r):
-        self.__filter_radius = r
-        self.__padding_img_size = self.__img_size[0] + 2 * r, self.__img_size[1] + 2 * r
-        self.p = util.padding(self.p, r)
-        self.guide = util.padding(self.guide, r)
+        self.__filter_radius = floor(r / self.__s)
+        self.__padding_img_size = self.__img_size[0] + 2 * self.__filter_radius, self.__img_size[1] + 2 * self.__filter_radius
+        self.p = util.padding(self.p, self.__filter_radius)
+        self.guide = util.padding(self.guide, self.__filter_radius)
 
     def set_epsilon(self, e):
         self.__epsilon = e
 
     # --- kernel algorithm ---
     def run(self):
+        mean_a, mean_b = [], []
         if self.p is None or self.guide is None or self.__epsilon is None:
             return False
         self.__calculate_box_buff()
         self.q = []
         r = self.__filter_radius
         for i in range(r, r + self.__img_size[1]):
-            q_row = []
+            mean_a_row, mean_b_row = [], []
             for j in range(r, r + self.__img_size[0]):
                 aver_a, aver_b = self.__calculate_aver_ab_at(i, j)
-                result = aver_a * self.guide[i][j] + aver_b
-                # print(str(aver_a) + " " + str(aver_b) + " " + str(result))
+                mean_a_row.append(aver_a)
+                mean_b_row.append(aver_b)
+            mean_a.append(mean_a_row)
+            mean_b.append(mean_b_row)
+        # 上采样
+        mean_a = util.sample(mean_a, self.__origin_img_size[0], self.__origin_img_size[1])
+        mean_b = util.sample(mean_b, self.__origin_img_size[0], self.__origin_img_size[1])
+        for i in range(self.__origin_img_size[1]):
+            q_row = []
+            for j in range(self.__origin_img_size[0]):
+                result = mean_a[i][j] * self.origin_guide[i][j] + mean_b[i][j]
                 q_row.append(result)
             self.q.append(q_row)
         return True
