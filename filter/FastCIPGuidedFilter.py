@@ -28,9 +28,11 @@ class FastCIPGuidedFilter(object):
         self.__a_v_buff = [None, None, None]  # box filter buffer of parameter a, array of 3-D vector
         self.__p2_buff = None  # box filter method buffer
         self.__b_buff = None  # box filter buffer of parameter b
-        self.__img_size = None  # source size, (width, height)
+        self.__origin_img_size = None
+        self.__img_size = None  # sampled source size, (width, height)
         self.__padding_img_size = None  # size of padding image, (width, height)
         self.__filter_radius = None  # filter radius
+        self.__s = None  # sample ratio
 
     # --- init methods, parameters should be set by user ---
     # for grey image input
@@ -58,13 +60,19 @@ class FastCIPGuidedFilter(object):
             print('> Error: channel is illegal')
         self.p = util.list_to_matrix(new_pixels, img.width, img.height)
         self.origin_p = img
-        self.__img_size = img.size
+        self.__origin_img_size = img.size
+
+    def set_sample_ratio(self, rs):
+        self.__s = rs
+        nw, nh = floor(self.__origin_img_size[0] / rs), floor(self.__origin_img_size[1] / rs)
+        self.__img_size = nw, nh
+        self.p = util.sample(self.p, nw, nh)
 
     # notice that here guide is a color image
     def set_guide(self, guide_path):
         img = Image.open(guide_path)
         # guide size should be equal to source size
-        if img.size == self.__img_size:
+        if img.size == self.__origin_img_size:
             pixels = list(img.getdata())
             new_pixels = [[], [], []]
             # normalize operation [0-255] -> [0-1]
@@ -72,7 +80,8 @@ class FastCIPGuidedFilter(object):
                 for k in range(3):  # 分解成三个分量
                     new_pixels[k].append(pixel[k] / (self.__GREY_LEVEL - 1))
             for i in range(3):
-                self.guide_v[i] = util.list_to_matrix(new_pixels[i], img.width, img.height)
+                self.origin_guide_v[i] = util.list_to_matrix(new_pixels[i], img.width, img.height)
+                self.guide_v[i] = util.sample(self.origin_guide_v[i], self.__img_size[0], self.__img_size[1])
         else:
             # error happens
             print('> Error: guide\'s size should be equal to source\'s size')
@@ -80,11 +89,11 @@ class FastCIPGuidedFilter(object):
 
     # set the radius of guided filter while padding source and guided images
     def set_filter_radius(self, r):
-        self.__filter_radius = r
-        self.__padding_img_size = self.__img_size[0] + 2 * r, self.__img_size[1] + 2 * r
-        self.p = util.padding(self.p, r)
+        self.__filter_radius = floor(r / self.__s)
+        self.__padding_img_size = self.__img_size[0] + 2 * self.__filter_radius, self.__img_size[1] + 2 * self.__filter_radius
+        self.p = util.padding(self.p, self.__filter_radius)
         for i in range(3):
-            self.guide_v[i] = util.padding(self.guide_v[i], r)
+            self.guide_v[i] = util.padding(self.guide_v[i], self.__filter_radius)
 
     def set_epsilon(self, e):
         self.__epsilon = e
@@ -93,16 +102,29 @@ class FastCIPGuidedFilter(object):
     def run(self):
         if self.p is None or self.guide_v is None or self.__epsilon is None:
             return False
+        mean_a, mean_b = [[], [], []], []
         self.__calculate_box_buff()
         self.q = []
         r = self.__filter_radius
         for i in range(r, r + self.__img_size[1]):
-            q_row = []
+            a_row, b_row = [[], [], []], []
             for j in range(r, r + self.__img_size[0]):
                 aver_a, aver_b = self.__calculate_aver_ab_at(i, j)
-                i_tmp_v = np.array([[self.guide_v[0][i][j], self.guide_v[1][i][j], self.guide_v[2][i][j]]])
-                tmp_a_v = np.array([aver_a])
-                result = i_tmp_v.dot(tmp_a_v.transpose())[0][0] + aver_b
+                for k in range(3):
+                    a_row[k].append(aver_a[k])
+                b_row.append(aver_b)
+            for k in range(3):
+                mean_a[k].append(a_row[k])
+            mean_b.append(b_row)
+        for k in range(3):
+            mean_a[k] = util.sample(mean_a[k], self.__origin_img_size[0], self.__origin_img_size[1])
+        mean_b = util.sample(mean_b, self.__origin_img_size[0], self.__origin_img_size[1])
+        for i in range(self.__origin_img_size[1]):
+            q_row = []
+            for j in range(self.__origin_img_size[0]):
+                i_tmp_v = np.array([[self.origin_guide_v[0][i][j], self.origin_guide_v[1][i][j], self.origin_guide_v[2][i][j]]])
+                tmp_a_v = np.array([[mean_a[0][i][j], mean_a[1][i][j], mean_a[2][i][j]]])
+                result = i_tmp_v.dot(tmp_a_v.transpose())[0][0] + mean_b[i][j]
                 q_row.append(result)
             self.q.append(q_row)
         return True

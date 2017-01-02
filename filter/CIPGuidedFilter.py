@@ -8,7 +8,7 @@ import filter.util as util
 
 # 使用彩色图像作为Guide进行引导滤波
 # 适用于RGB任何通道都无显著边界的情况
-class CIPGuidedFilter(object):
+class CIPGuideFilter(object):
     def __init__(self):
         # -- constant value --
         self.__GREY_LEVEL = 256.0
