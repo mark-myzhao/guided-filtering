@@ -220,6 +220,7 @@ class FastCIPGuidedFilter(object):
         denominator = cov_matrix + u_matrix * self.__epsilon
         if np.linalg.det(denominator) == 0:
             # 矩阵不可逆
+            print('fast: !!!')
             a_res = (1, 1, 1)
         else:
             a_denominator_matrix = np.linalg.inv(denominator)

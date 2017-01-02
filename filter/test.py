@@ -37,6 +37,9 @@ def image_enhancement(img_path, output_path, filter_radius=3, epsilon=0.2, k=1):
         test.set_epsilon(epsilon * epsilon)
         test.run()
         res.append(test.get_res_img())
+    # res[0].save('../output/img_enhancement/monarch_res_r.bmp')
+    # res[1].save('../output/img_enhancement/monarch_res_g.bmp')
+    # res[2].save('../output/img_enhancement/monarch_res_b.bmp')
     merged_img = util.merge_image(res[0], res[1], res[2])
     pixels = list(merged_img.getdata())
     new_pixels = []
@@ -82,9 +85,9 @@ def fast_image_enhancement(img_path, output_path, filter_radius=3, epsilon=0.2, 
         test.run()
         res.append(test.get_res_img())
     # debug
-    res[0].save('../output/img_enhancement/fast_monarch_res_r.bmp')
-    res[1].save('../output/img_enhancement/fast_monarch_res_g.bmp')
-    res[2].save('../output/img_enhancement/fast_monarch_res_b.bmp')
+    # res[0].save('../output/img_enhancement/fast_monarch_res_r.bmp')
+    # res[1].save('../output/img_enhancement/fast_monarch_res_g.bmp')
+    # res[2].save('../output/img_enhancement/fast_monarch_res_b.bmp')
     merged_img = util.merge_image(res[0], res[1], res[2])
     merged_img.save('../output/img_enhancement/fast_monarch_res_rgb.bmp')
     pixels = list(merged_img.getdata())
@@ -115,17 +118,17 @@ def fast_image_enhancement(img_path, output_path, filter_radius=3, epsilon=0.2, 
 print('--  Guided Filter Enhancement  --')
 start_total = clock()
 process_list = [
-                ('../input/img_enhancement/monarch.bmp', '../output/img_enhancement/monarch_res.bmp')
-                # ('../input/img_enhancement/bird.bmp', '../output/img_enhancement/bird_res.bmp'),
-                # ('../input/img_enhancement/starynight.bmp', '../output/img_enhancement/starynight_res.bmp'),
-                # ('../input/img_enhancement/tomato.bmp', '../output/img_enhancement/tomato_res.bmp'),
-                # ('../input/img_enhancement/tulips.bmp', '../output/img_enhancement/tulips_res.bmp')
+                ('../input/img_enhancement/monarch.bmp', '../output/img_enhancement/monarch_res.bmp'),
+                ('../input/img_enhancement/bird.bmp', '../output/img_enhancement/bird_res.bmp'),
+                ('../input/img_enhancement/starynight.bmp', '../output/img_enhancement/starynight_res.bmp'),
+                ('../input/img_enhancement/tomato.bmp', '../output/img_enhancement/tomato_res.bmp'),
+                ('../input/img_enhancement/tulips.bmp', '../output/img_enhancement/tulips_res.bmp')
                 ]
 i = 0
 for path in process_list:
     i += 1
     start = clock()
-    image_enhancement(path[0], path[1], 4, 0.2, 1)
+    image_enhancement(path[0], path[1], 9, 0.2, 1)
     finish = clock()
     print('image ' + str(i) + ' processing time: ' + str(finish - start) + 's')
 finish_total = clock()
@@ -136,17 +139,17 @@ print('')
 print('--  Fast Guided Filter Enhancement  --')
 start_total = clock()
 process_list = [
-                ('../input/img_enhancement/monarch.bmp', '../output/img_enhancement/fast_monarch_res.bmp')
-                # ('../input/img_enhancement/bird.bmp', '../output/img_enhancement/bird_res.bmp'),
-                # ('../input/img_enhancement/starynight.bmp', '../output/img_enhancement/starynight_res.bmp'),
-                # ('../input/img_enhancement/tomato.bmp', '../output/img_enhancement/tomato_res.bmp'),
-                # ('../input/img_enhancement/tulips.bmp', '../output/img_enhancement/tulips_res.bmp')
+                ('../input/img_enhancement/monarch.bmp', '../output/img_enhancement/fast_monarch_res.bmp'),
+                ('../input/img_enhancement/bird.bmp', '../output/img_enhancement/fast_bird_res.bmp'),
+                ('../input/img_enhancement/starynight.bmp', '../output/img_enhancement/fast_starynight_res.bmp'),
+                ('../input/img_enhancement/tomato.bmp', '../output/img_enhancement/fast_tomato_res.bmp'),
+                ('../input/img_enhancement/tulips.bmp', '../output/img_enhancement/fast_tulips_res.bmp')
                 ]
 i = 0
 for path in process_list:
     i += 1
     start = clock()
-    fast_image_enhancement(path[0], path[1], 4, 0.2, 1, 2.0)
+    fast_image_enhancement(path[0], path[1], 9, 0.2, 1, 4.0)
     finish = clock()
     print('image ' + str(i) + ' processing time: ' + str(finish - start) + 's')
 finish_total = clock()
