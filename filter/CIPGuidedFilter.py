@@ -195,8 +195,6 @@ class CIPGuideFilter(object):
         u_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         denominator = cov_matrix + u_matrix * self.__epsilon
         if np.linalg.det(denominator) == 0:
-            # 矩阵不可逆
-            print('!!!')
             a_res = (1, 1, 1)
         else:
             a_denominator_matrix = np.linalg.inv(denominator)
